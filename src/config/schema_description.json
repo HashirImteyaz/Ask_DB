@@ -1,0 +1,213 @@
+{
+  "title": "Business Schema for Recipe & Manufacturing Database",
+  "description": "This file is the single source of truth for the AI agent, defining business logic for accurate SQL queries. Schema is designed to be scalable and adaptable to varying table structures.",
+  "version": "1.0",
+  "scalability_notes": "This schema supports dynamic table discovery and column mapping. When new tables or columns are added, only this file needs to be updated.",
+  "relationships": [
+    {
+      "from_table": "RecipeExplosion",
+      "from_column": "CUCSpecCode",
+      "to_table": "Specifications",
+      "to_column": "SpecCode",
+      "description": "Connects a recipe from the RecipeExplosion table to its detailed description and metadata in the Specifications table."
+    },
+    {
+      "from_table": "RecipeExplosion",
+      "from_column": "INGSpecCode",
+      "to_table": "Specifications",
+      "to_column": "SpecCode",
+      "description": "Connects an ingredient from the RecipeExplosion table to its detailed description and metadata in the Specifications table."
+    }
+  ],
+  "critical_query_patterns": [
+    {
+      "name": "Recipe Ingredient Lookup Pattern",
+      "description": "When a user asks for ingredients of a specific recipe (e.g., 'ingredients of vegetable soup'), use this self-join pattern",
+      "correct_pattern": "SELECT s_ing.SpecDescription AS IngredientName, re.Ing2CUC_PercentageContribution, re.Ing2CUC_QuantityContribution FROM Specifications s_cuc JOIN RecipeExplosion re ON s_cuc.SpecCode = re.CUCSpecCode JOIN Specifications s_ing ON re.INGSpecCode = s_ing.SpecCode WHERE s_cuc.SpecDescription LIKE '%recipe_name%' AND s_cuc.SpecGroupCode = 'CUC'",
+      "wrong_pattern": "Searching ingredients table (SpecGroupCode='ING') for recipe names - this is incorrect!",
+      "explanation": "Always join Specifications table twice: once for recipes (CUC) and once for ingredients (ING). Use RecipeExplosion as the bridge table."
+    },
+    {
+      "name": "Compound Search Terms Handling",
+      "description": "For compound terms like 'chicken soup', split and search for individual words. Handle hyphenated terms by converting to spaces.",
+      "rule": "For space-separated terms: split and use AND conditions. For hyphenated terms: replace hyphen with space then search as exact phrase",
+      "examples": {
+        "chicken soup": "WHERE UPPER(s_cuc.SpecDescription) LIKE UPPER('%chicken%') AND UPPER(s_cuc.SpecDescription) LIKE UPPER('%soup%')",
+        "chicken-soup": "WHERE UPPER(s_cuc.SpecDescription) LIKE UPPER('%chicken soup%')",
+        "vegetable-curry": "WHERE UPPER(s_cuc.SpecDescription) LIKE UPPER('%vegetable curry%')",
+        "tomato pasta": "WHERE UPPER(s_cuc.SpecDescription) LIKE UPPER('%tomato%') AND UPPER(s_cuc.SpecDescription) LIKE UPPER('%pasta%')"
+      }
+    },
+    {
+      "name": "Listing of items",
+      "description": "For the requests like list of all ingredients or recepes or particular type",
+      "rule": "Unique the clumns to avoid repetations, If there are two colums the list all the unique in the first column and group the second column",
+      "example":{
+        "List all recepes": "SELECT DISTINCT s_cuc.SpecDescription FROM Specifications s_cuc WHERE s_cuc.SpecGroupCode = 'CUC' LIMIT 200;",
+        "List all ingredients with ids": "SELECT DISTINCT s_ing.SpecCode, s_ing.SpecDescription FROM Specifications s_ing WHERE s_ing.SpecGroupCode = 'ING' LIMIT 200;"
+
+      }
+    },
+    {
+      "name": "Recipe vs Ingredient Classification Rule",
+      "description": "Critical rule to distinguish between recipes and ingredients in queries",
+      "rules": {
+        "When user asks about 'ingredients OF X'": "X is a recipe (SpecGroupCode='CUC'), find its ingredients using the Recipe Ingredient Lookup Pattern",
+        "When user asks about 'recipes WITH ingredient X'": "X is an ingredient (SpecGroupCode='ING'), find recipes that contain it"
+      }
+    },
+    {
+      "name": "Geographic Query Handling",
+      "description": "Handle geographic queries for ingredients based on manufacturing location",
+      "rule": "When users query about ingredients from geographic regions, search both CUCPlantBUName and CUCPlantCountryName columns",
+      "examples": {
+        "ingredients from Europe": "Search for 'Europe' in CUCPlantBUName column",
+        "ingredients from France": "Search for 'France' in CUCPlantCountryName column", 
+        "recipes from EU": "Search for 'EU' in CUCPlantBUCode column",
+        "products from Asia": "Search for 'Asia' in CUCPlantBUName column"
+      },
+      "search_pattern": "Always use UPPER() for case-insensitive matching: WHERE UPPER(re.CUCPlantBUName) LIKE UPPER('%region%') OR UPPER(re.CUCPlantCountryName) LIKE UPPER('%region%')"
+    },
+    {
+      "name": "SQL Query Best Practices",
+      "description": "Essential SQL patterns to follow for all queries",
+      "rules": {
+        "Always use DISTINCT": "Add DISTINCT to SELECT statements to avoid duplicate rows",
+        "Use proper joins": "Only join tables that are necessary for the query",
+        "Case-insensitive search": "Always use UPPER() function for text comparisons",
+        "Limit results": "Add LIMIT clause to prevent overwhelming results (typically 100-200)"
+      },
+      "examples": {
+        "single_table_recipe_list": "SELECT DISTINCT SpecDescription FROM Specifications WHERE SpecGroupCode = 'CUC' LIMIT 100",
+        "single_table_ingredient_list": "SELECT DISTINCT SpecDescription FROM Specifications WHERE SpecGroupCode = 'ING' LIMIT 100",
+        "single_table_search": "SELECT DISTINCT SpecDescription FROM Specifications WHERE UPPER(SpecDescription) LIKE UPPER('%search_term%') AND SpecGroupCode = 'CUC' LIMIT 100",
+        "join_pattern_ingredients_of_recipe": "SELECT DISTINCT s_ing.SpecDescription FROM Specifications s_cuc JOIN RecipeExplosion re ON s_cuc.SpecCode = re.CUCSpecCode JOIN Specifications s_ing ON re.INGSpecCode = s_ing.SpecCode WHERE UPPER(s_cuc.SpecDescription) LIKE UPPER('%recipe_name%') AND s_cuc.SpecGroupCode = 'CUC' LIMIT 100",
+        "join_pattern_geographic": "SELECT DISTINCT s_cuc.SpecDescription FROM Specifications s_cuc JOIN RecipeExplosion re ON s_cuc.SpecCode = re.CUCSpecCode WHERE UPPER(re.CUCPlantBUName) LIKE UPPER('%region%') AND s_cuc.SpecGroupCode = 'CUC' LIMIT 100"
+      }
+    },
+    {
+      "name": "Single vs Multi-table Query Decision",
+      "description": "Critical decision framework for determining when to use single table vs joins",
+      "decision_rules": {
+        "Use ONLY Specifications table when": [
+          "Listing all recipes or ingredients",
+          "Searching for recipes or ingredients by name only",
+          "Counting total recipes or ingredients",
+          "Getting basic information about specifications"
+        ],
+        "Use JOIN with RecipeExplosion when": [
+          "Finding ingredients OF a specific recipe",
+          "Finding recipes WITH a specific ingredient", 
+          "Asking about manufacturing locations or plant information",
+          "Calculating percentages or quantities in recipes",
+          "Geographic queries (by region, country, business unit)"
+        ]
+      },
+      "examples": {
+        "single_table": {
+          "query": "List all soup recipes",
+          "sql": "SELECT DISTINCT SpecDescription FROM Specifications WHERE UPPER(SpecDescription) LIKE UPPER('%soup%') AND SpecGroupCode = 'CUC' LIMIT 100"
+        },
+        "multi_table": {
+          "query": "What ingredients are in chicken soup?",
+          "sql": "SELECT DISTINCT s_ing.SpecDescription FROM Specifications s_cuc JOIN RecipeExplosion re ON s_cuc.SpecCode = re.CUCSpecCode JOIN Specifications s_ing ON re.INGSpecCode = s_ing.SpecCode WHERE UPPER(s_cuc.SpecDescription) LIKE UPPER('%chicken%') AND UPPER(s_cuc.SpecDescription) LIKE UPPER('%soup%') AND s_cuc.SpecGroupCode = 'CUC' LIMIT 100"
+        }
+      }
+    }
+  ],
+  "golden_formulas": [
+    {
+      "name": "Absolute Component Mass Calculation",
+      "description": "To calculate the absolute mass of a specific substance in a final recipe, use percentage contribution from RecipeExplosion table.",
+      "formula": "SUM(re.Ing2CUC_PercentageContribution) - use this field directly for percentage calculations",
+      "notes": "Use Ing2CUC_PercentageContribution for percentage-based calculations. For quantity calculations, use Ing2CUC_QuantityContribution."
+    },
+    {
+      "name": "Definition of the SpecTypeCode or busines group code",
+      "description": "This code also indicates the business group (BG) the item belongs to",
+      "formula": {
+        "Ingredient NonFoods": "The specification is for an ingredient used in non-food products, such as personal or home care items.",
+        "Ingredient Foods": "The specification is for an ingredient used in food products.",
+        "PC": "A code for Personal Care products.",
+        "HC": "A code for Home Care products.",
+        "BW": "A code for a specific type of product, possibly 'Beauty & Wellbeing' or a similar business category.",
+        "FOODS": "A general classification for food products.",
+        "ICE": "A code for products related to ice cream or frozen desserts."
+      },
+      "notes": ""
+    },
+    {
+      "name": "Definition of the values in CUCPlantBUCode",
+      "description": "This column contains a code representing the Business Unit for the manufacturing plant. The codes are typically abbreviations for specific geographical regions or business segments.",
+      "notes": "",
+      "formula": {
+        "EU": "Europe",
+        "SA": "South Asia",
+        "GCEA": "Greater China & East Asia",
+        "LATAM": "Latin America",
+        "AMET": "Africa, Middle East & Turkey",
+        "None": "No assigned Business Unit"
+      }
+    },
+    {
+      "name": "Definition of values in AuthorisationGroupCode",
+      "description": "This table will show in which group this recipe belongs to.",
+      "notes": "",
+      "formula": {
+        "ZFOD": "Food",
+        "ZHPC": "Home and personal care",
+        "ZBVG": "Beverage",
+        "ZFNT": "Functional nutrition",
+        "ZICR": "Ice-cream",
+        "ZPLI": "Pepsi Lipton",
+        "ZPMT": "Plant based meat",
+        "ZSND": "Dressings",
+        "ZSVR": "Savoury",
+        "ZTCO": "Tea", 
+        "ZDEO": "Deodorants",
+        "ZHRC": "Haircare",
+        "ZHSC": "Home and hygiene",
+        "ZHWN": "Health and wellness",
+        "ZLRY": "Fabric Care",
+        "ZORC": "Oral care",
+        "ZSCL": "Skin cleansing",
+        "ZSCR": "Skin care"
+      }
+    },
+    {
+      "name": "Types of data in the column SpecGroupCode in Specifications",
+      "description": "These are the code to indicate in which the ingredients belong to",
+      "notes": "",
+      "formula": {
+        "ING": "Ingredient",
+        "CUC": "Consumer Unit Content"
+      }
+    }
+  ],
+  "table_descriptions": {
+    "Specifications": "This table serves as the master catalog for all recipes and ingredient entities within the system. It contains both finished recipes, identified by a SpecGroupCode of 'CUC', and raw ingredients, identified by a SpecGroupCode of 'ING'.",
+    "RecipeExplosion": "This table defines the hierarchical relationships and composition of products. It links recipes to their constituent ingredients using CUCSpecCode and INGSpecCode. The table quantifies this relationship by specifying the OverallPercentContribution and QuantityContribution of each ingredient required for a particular recipe."
+  },
+  "column_descriptions": {
+    "Specifications": {
+      "SpecCode": "A unique numerical identifier for a recipes or ingredient specification, ingredient, or recipe.",
+      "SpecDescription": "A human-readable name of the recipes or ingredient, often including details about its type and purpose.",
+      "SpecStatusDescription": "This column indicates the current lifecycle status of a recipes or ingredient specification. It tracks the progress from 'In Process' and 'In Review' to an active 'Released' state, and finally to 'Obsolete' when it is no longer in use.",
+      "SpecGroupCode": "A high-level code that groups similar product specifications together. It has two possible values: 'ING' for ingredients and 'CUC' for consumer unit content or recipe",
+      "SpecTypeDescription": "A detailed description of the recipes's or ingredient's type, like 'Fragrances' or 'Dried vegetables' 'Fragrances', 'Flavours', etc",
+      "AuthorisationGroupCode": "A code that categorizes the recipes or ingredient into a specific business or product family, such as 'ZHPC' for home and personal care or 'ZFOD' for food.",
+      "SpecTypeCode": "A specific code that provides a granular classification for a product or ingredient. This code also indicates the business group (BG) the item belongs to."
+    },
+    "RecipeExplosion": {
+      "CUCSpecCode": "A unique identifier for a consumer unit content or recipe. This code represents a component or sub-assembly within a final product.",
+      "CUCRecipeCode": "The specific recipe code for the consumer unit component. It often includes version details in its format (e.g., /002/003).",
+      "CUCPlantOwnershipFlag": "A flag indicating the ownership status of the plant. The two possible values are 'UL' for Unilever-owned plants and 'CM' for contract manufacturers.",
+      "CUCPlantCountryName": "The full name of the country where the plant is located.",
+      "CUCPlantBUCode": "The code representing the Business Unit (BU) for the manufacturing plant. The detailed name is mentioned in the column `CUCPlantBUName`.",
+      "CUCPlantBUName": "The full name of the Business Unit (BU) that the plant belongs to.",
+      "INGSpecCode": "A unique identifier for an ingredient or raw material used in the recipe.",
+      "Ing2CUC_PercentageContribution": "The percentage contribution of a specific ingredient to the total composition of the consumer unit content recipe.",
+      "Ing2CUC_QuantityContribution": "The quantity or amount of a specific ingredient required for the recipe."
+    }
+  }
+}

@@ -1,0 +1,14 @@
+change the prompts or code based the following conditions:
+0. If table input data related prompts needed to be updated make chages in schema descpription file.
+1. Consider an example if user is looking for the items like "chicken soup", it must search the recepe with "chicken" and "soup". 
+2. Consider an example if they search chicken-soup, the the search should be "chicken soup" in the descpription.
+3. Joining table should not be strict if human query. If the user query ask which require only single table then use single table. If the query required more than one table then use joining there.
+4. Use distinct in the SQL query to avoid repetation of rows.
+5. The output response must be insightful.
+6. Add graph mechanism. Plotting bar graph, line graph or pie chart based on the user requirement.
+7. Strengthen the human in the loop mechanism. If the SQL doesnt work or unable to generate SQL query for lack of information ask human for clarifications by asking exactly what they want. 
+8. Not all human query needed to be converted to SQL query. If refer the history. From the history has the required information process from there. 
+9. Remore suggestion part.
+10 The UI chat page must be fixed. 
+11. Lets consider a situation when human query asks like `Show me ingredients from Europe`. they mean ingredients from Europe CUCPlantBUName. If the query is 'Show me ingredients from France', then they mean ingredients from CUCPlantCountryName. Search for the country names from either of the column and give response.
+12. If SQL errored out by some reason, there must be a loop sening back the human query with generated sql query and error.

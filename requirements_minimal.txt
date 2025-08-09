@@ -1,0 +1,47 @@
+# Minimal Core Requirements for NLQ PLM System
+# This file contains only the absolute essential packages
+
+# Core Web Framework
+fastapi==0.115.4
+uvicorn==0.32.1
+
+# Environment and Configuration
+python-dotenv==1.0.1
+python-multipart==0.0.17
+PyYAML==6.0.2
+
+# Database
+sqlalchemy==2.0.36
+
+# LangChain Core (Stable versions)
+langchain-core==0.3.17
+langchain-openai==0.2.8
+langgraph==0.2.34
+
+# OpenAI
+openai==1.54.4
+tiktoken==0.7.0
+
+# Data Processing (Essential only)
+pandas==2.1.4
+numpy==1.26.4
+
+# HTTP and Validation
+requests==2.31.0
+pydantic==2.7.4
+
+# Visualization
+matplotlib==3.8.4
+
+# Basic ML (for similarity calculations)
+scikit-learn==1.4.2
+
+# Streamlit for UI
+streamlit==1.40.1
+
+# Optional - install only if using these features:
+# redis==4.6.0              # For caching
+# sqlparse==0.4.4           # For SQL parsing
+# celery==5.3.4             # For background tasks
+# psycopg2-binary==2.9.7    # For PostgreSQL
+# PyMySQL==1.1.0            # For MySQL

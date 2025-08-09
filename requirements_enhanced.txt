@@ -1,0 +1,120 @@
+# Enhanced Requirements for NLQ PLM System with Scalability Features
+# Core FastAPI and Web Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+gunicorn==21.2.0
+python-multipart==0.0.6
+python-dotenv==1.0.0
+
+# Database and ORM
+sqlalchemy==2.0.23
+alembic==1.12.0
+aiosqlite==0.19.0
+
+# PostgreSQL support (for production)
+psycopg2-binary==2.9.7
+asyncpg==0.28.0
+
+# MySQL support (optional)
+PyMySQL==1.1.0
+aiomysql==0.2.0
+
+# Vector Database and Embeddings
+chromadb>=0.4.24
+sentence-transformers==2.2.2
+tokenizers==0.19.1
+faiss-cpu==1.7.4
+numpy>=1.26.0
+
+# LLM and AI
+openai>=1.6.1
+langchain>=0.2.0
+langchain-openai==0.0.2
+langchain-community==0.0.3
+langgraph==0.0.26
+tiktoken>=0.5.2
+transformers==4.35.0
+
+# LlamaIndex Components  
+llama-index==0.9.14
+llama-index-embeddings-openai==0.1.5
+
+# Redis and Caching
+redis==5.0.1
+hiredis==2.2.3
+python-redis-lock==4.0.0
+
+# Celery for Async Processing
+celery==5.3.4
+celery[redis]==5.3.4
+kombu==5.3.4
+
+# Data Processing and Analysis
+pandas>=2.2.0
+openpyxl==3.1.2
+xlsxwriter==3.1.9
+pyarrow==14.0.1
+
+# Text Processing and NLP
+nltk==3.8.1
+spacy>=3.7.0
+textstat==0.7.3
+fuzzywuzzy==0.18.0
+python-levenshtein==0.21.1
+
+# SQL Parsing and Validation
+sqlparse==0.4.4
+sqlfluff==2.3.5
+sqlalchemy-utils==0.41.1
+
+# Monitoring and Logging
+prometheus-client==0.19.0
+structlog==23.1.0
+colorlog==6.8.0
+
+# HTTP and Networking
+httpx==0.25.0
+aiohttp==3.9.0
+requests==2.31.0
+
+# Validation and Serialization
+pydantic==2.4.2
+marshmallow==3.20.1
+
+# Configuration and Environment
+PyYAML==6.0.1
+python-json-logger==2.0.7
+setuptools>=68.0.0
+
+# Testing and Quality Assurance
+pytest==7.4.2
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-mock==3.11.1
+
+# File and Data Utilities
+click==8.1.7
+tqdm==4.66.1
+
+# Security and Authentication
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+bcrypt==4.0.1
+
+# Compression and Archive
+lz4==4.3.2
+zstandard==0.22.0
+
+# Development and Debugging
+ipython==8.16.1
+jupyter==1.0.0
+
+# System and OS utilities
+psutil==5.9.6
+
+# Date and Time utilities
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Additional utilities
+matplotlib==3.8.2

@@ -1,0 +1,1390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data-Agnostic NLQ System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary-color: #1d4ed8;
+            --primary-hover: #1e40af;
+            --success-color: #10b981;
+            --success-hover: #059669;
+            --error-color: #ef4444;
+            --warning-color: #f59e0b;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        html, body {
+            max-width: 100%;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--gray-100);
+            color: var(--gray-800);
+            display: flex;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #sidebar {
+            width: 320px;
+            background-color: white;
+            padding: 24px;
+            border-right: 1px solid var(--gray-200);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            min-width: 280px;
+            flex-shrink: 0;
+        }
+
+        #sidebar h2 {
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin: 0 0 8px 0;
+            color: var(--gray-800);
+        }
+
+        #sidebar p {
+            color: var(--gray-500);
+            font-size: 0.875rem;
+            margin: 0 0 16px 0;
+            line-height: 1.5;
+        }
+
+        .upload-section {
+            border: 1px solid var(--gray-200);
+            border-radius: 12px;
+            padding: 16px;
+            background-color: var(--gray-50);
+        }
+
+        .upload-section h3 {
+            font-weight: 600;
+            font-size: 1rem;
+            margin: 0 0 12px 0;
+            color: var(--gray-700);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--gray-300);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 12px;
+        }
+
+        .upload-area:hover {
+            border-color: var(--gray-400);
+            background-color: white;
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary-color);
+            background-color: rgba(29, 78, 216, 0.05);
+        }
+
+        .upload-label {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border: none;
+            font-size: 0.875rem;
+        }
+
+        .upload-label:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-list {
+            margin-top: 12px;
+            font-size: 0.875rem;
+        }
+
+        .file-item {
+            background-color: white;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 4px;
+            border: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+        }
+
+        .file-item .file-name {
+            color: var(--gray-700);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        .file-item .file-size {
+            color: var(--gray-500);
+            margin-left: 8px;
+            font-size: 0.75rem;
+        }
+
+        .remove-file {
+            color: var(--error-color);
+            cursor: pointer;
+            margin-left: 8px;
+            padding: 2px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+        }
+
+        .remove-file:hover {
+            background-color: var(--gray-100);
+        }
+
+        #upload-button {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: var(--success-color);
+            color: white;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        #upload-button:disabled {
+            background-color: var(--gray-400);
+            cursor: not-allowed;
+        }
+
+        #upload-button:hover:enabled {
+            background-color: var(--success-hover);
+        }
+
+        .status-message {
+            font-size: 0.875rem;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .status-loading { 
+            background-color: #dbeafe; 
+            color: #1e40af; 
+            border: 1px solid #bfdbfe;
+        }
+        .status-success { 
+            background-color: #d1fae5; 
+            color: #065f46; 
+            border: 1px solid #a7f3d0;
+        }
+        .status-error { 
+            background-color: #fee2e2; 
+            color: #991b1b; 
+            border: 1px solid #fca5a5;
+        }
+
+        #chat-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: white;
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        #chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--gray-200);
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        #chat-header h1 {
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin: 0;
+            color: var(--gray-800);
+        }
+
+        #chat-header p {
+            margin: 4px 0 0 0;
+            color: var(--gray-500);
+            font-size: 0.875rem;
+        }
+
+        #chat-messages {
+            flex-grow: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background-color: var(--gray-50);
+        }
+
+        .message {
+            display: flex;
+            max-width: 85%;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .message.user { 
+            justify-content: flex-end; 
+            align-self: flex-end; 
+        }
+        
+        .message.bot { 
+            justify-content: flex-start; 
+            align-self: flex-start; 
+        }
+
+        .message-bubble {
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            max-width: 100%;
+        }
+
+        .message.user .message-bubble {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .message-bubble {
+            background-color: white;
+            color: var(--gray-800);
+            border-bottom-left-radius: 4px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .sql-block {
+            background-color: var(--gray-800);
+            color: var(--gray-200);
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            border: 1px solid var(--gray-700);
+            max-width: 100%;
+        }
+
+        .sql-block pre { 
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+        }
+
+        .sql-block code {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            display: block;
+        }
+
+        .graph-block {
+            margin-top: 12px;
+            text-align: center;
+        }
+
+        .graph-block img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid var(--gray-300);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .optimization-block {
+            margin-top: 12px;
+            background-color: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .optimization-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .optimization-title {
+            font-weight: 600;
+            color: #0369a1;
+            font-size: 0.9rem;
+        }
+
+        .optimization-status {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .optimization-status.applied {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .optimization-status.available {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .optimization-improvement, .optimization-confidence {
+            font-size: 0.85rem;
+            color: #374151;
+            margin: 4px 0;
+        }
+
+        .optimization-recommendations {
+            margin-top: 8px;
+        }
+
+        .recommendations-title {
+            font-weight: 500;
+            color: #1f2937;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+        }
+
+        .recommendations-list {
+            margin: 0;
+            padding-left: 16px;
+            font-size: 0.8rem;
+            color: #4b5563;
+        }
+
+        .recommendation-item {
+            margin: 4px 0;
+        }
+
+        .original-sql-details {
+            margin-top: 8px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 8px;
+        }
+
+        .original-sql-summary {
+            font-size: 0.8rem;
+            color: #6b7280;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .original-sql-summary:hover {
+            color: #374151;
+        }
+
+        .original-sql-block {
+            margin-top: 8px;
+            background-color: #1f2937;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .original-sql-block pre {
+            margin: 0;
+            padding: 12px;
+            background: none;
+            color: #e5e7eb;
+            font-size: 0.8rem;
+        }
+
+        .suggestion-options {
+            margin-top: 16px;
+            border-top: 1px solid var(--gray-200);
+            padding-top: 16px;
+        }
+
+        .suggestion-header {
+            color: var(--gray-600);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .suggestion-btn {
+            background-color: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            padding: 12px;
+            width: 100%;
+            text-align: left;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .suggestion-btn:hover { 
+            background-color: white;
+            border-color: var(--primary-color);
+        }
+
+        .suggestion-btn .explanation {
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .suggestion-btn .query-preview {
+            font-size: 0.85rem;
+            color: var(--gray-800);
+            font-weight: 500;
+            font-family: 'Monaco', 'Menlo', monospace;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #chat-input-area {
+            display: flex;
+            padding: 20px;
+            border-top: 1px solid var(--gray-200);
+            background-color: white;
+            gap: 12px;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.05);
+        }
+
+        #messageInput {
+            flex-grow: 1;
+            border: 1px solid var(--gray-300);
+            border-radius: 24px;
+            padding: 12px 20px;
+            outline: none;
+            font-size: 0.95rem;
+            transition: border-color 0.2s ease;
+        }
+
+        #messageInput:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+        }
+
+        #messageInput:disabled {
+            background-color: var(--gray-100);
+            color: var(--gray-500);
+        }
+
+        #sendButton {
+            width: 48px;
+            height: 48px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(29, 78, 216, 0.2);
+        }
+
+        #sendButton:disabled {
+            background-color: var(--gray-400);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #sendButton:hover:enabled {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(29, 78, 216, 0.3);
+        }
+
+        .loading-dots {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-dots span {
+            width: 6px;
+            height: 6px;
+            background-color: currentColor;
+            border-radius: 50%;
+            animation: dot-blink 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dots span:nth-child(2) { animation-delay: -0.16s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0s; }
+
+        @keyframes dot-blink {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+            z-index: 1000;
+            display: none;
+        }
+
+        .connection-status.online {
+            background-color: var(--success-color);
+        }
+
+        .connection-status.offline {
+            background-color: var(--error-color);
+        }
+
+        /* Mobile Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                height: 100vh;
+            }
+            
+            #sidebar {
+                width: 100%;
+                min-width: 100%;
+                height: auto;
+                max-height: 40vh;
+                border-right: none;
+                border-bottom: 1px solid var(--gray-200);
+                padding: 16px;
+                gap: 16px;
+            }
+            
+            #chat-container {
+                flex: 1;
+                min-height: 0;
+            }
+            
+            #chat-messages {
+                padding: 16px;
+            }
+            
+            #chat-input-area {
+                padding: 16px;
+            }
+            
+            .message {
+                max-width: 95%;
+            }
+            
+            #messageInput {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+
+        @media (max-width: 480px) {
+            #sidebar {
+                padding: 12px;
+            }
+            
+            #chat-header {
+                padding: 16px;
+            }
+            
+            #chat-messages {
+                padding: 12px;
+                gap: 12px;
+            }
+            
+            .message-bubble {
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
+
+            .pagination-buttons {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .pagination-btn {
+                width: 100%;
+            }
+        }
+
+        /* Pagination Styles */
+        .pagination-controls {
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .pagination-info {
+            font-size: 0.85rem;
+            color: var(--gray-600);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pagination-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .pagination-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .pagination-btn:disabled {
+            background: var(--gray-300);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .page-indicator {
+            font-size: 0.85rem;
+            color: var(--gray-700);
+            font-weight: 500;
+        }
+
+        /* HITL Clarification Styles */
+        .clarification-options {
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--gray-50);
+            border-radius: 8px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .clarification-header {
+            display: block;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .clarification-btn {
+            display: block;
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 10px;
+            background: white;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            color: var(--gray-800);
+        }
+
+        .clarification-btn:hover {
+            background: var(--gray-100);
+            border-color: var(--primary-color);
+            transform: translateX(4px);
+        }
+
+        .clarification-btn:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="connectionStatus">
+        <span id="connectionText">Connected</span>
+    </div>
+
+    <div id="sidebar">
+        <h2>Data Upload</h2>
+        <p>Upload your data files and optional context file to start analyzing your data with natural language queries.</p>
+        
+        <div class="upload-section">
+            <h3>Data Files</h3>
+            <div class="upload-area" id="dataUploadArea">
+                <label for="file-input" class="upload-label">Choose Data Files</label>
+                <input type="file" id="file-input" class="file-input" multiple accept=".csv,.xls,.xlsx">
+                <p style="margin: 8px 0 0 0; font-size: 0.75rem; color: var(--gray-500);">
+                    Supports CSV, Excel files (max 10MB each)
+                </p>
+            </div>
+            <div id="file-list" class="file-list"></div>
+        </div>
+        
+        <div class="upload-section">
+            <h3>Context File (Optional)</h3>
+            <div class="upload-area" id="contextUploadArea">
+                <label for="context-file-input" class="upload-label">Choose Context File</label>
+                <input type="file" id="context-file-input" class="file-input" accept=".md,.txt,.json,.yml,.yaml">
+                <p style="margin: 8px 0 0 0; font-size: 0.75rem; color: var(--gray-500);">
+                    Schema descriptions, business rules
+                </p>
+            </div>
+            <div id="context-file-list" class="file-list"></div>
+        </div>
+        
+        <button id="upload-button" disabled>Upload and Process</button>
+        <div id="upload-status" class="status-message"></div>
+    </div>
+
+    <div id="chat-container">
+        <div id="chat-header">
+            <h1>Natural Language Query System</h1>
+            <p>Ask questions about your data in plain English</p>
+        </div>
+        <div id="chat-messages">
+            <div class="message bot">
+                <div class="message-bubble">
+                    Welcome to the Data-Agnostic NLQ System! Please upload your data files to begin querying your data with natural language.
+                    <br><br>
+                    <strong>Example queries:</strong>
+                    <br>• "How many recipes are there?"
+                    <br>• "What ingredients are used in food products?"
+                    <br>• "Show me recipes from Europe"
+                </div>
+            </div>
+        </div>
+        <div id="chat-input-area">
+            <input type="text" id="messageInput" placeholder="Upload data files to begin..." disabled>
+            <button id="sendButton" disabled>
+                <span id="sendIcon">→</span>
+            </button>
+        </div>
+    </div>
+
+<script>
+    // Configuration
+    const CONFIG = {
+        MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
+        MAX_CHAT_HISTORY: 20,
+        UPLOAD_TIMEOUT: 60000, // 60 seconds
+        CHAT_TIMEOUT: 45000 // 45 seconds
+    };
+
+    // State management
+    let chatHistory = [];
+    let isProcessing = false;
+    let uploadedFiles = new Set();
+    let currentPage = 1;
+    let pageSize = 1000;
+    let awaitingClarification = false;
+    let clarificationContext = null;
+    
+    // DOM elements
+    const elements = {
+        sendButton: document.getElementById('sendButton'),
+        sendIcon: document.getElementById('sendIcon'),
+        messageInput: document.getElementById('messageInput'),
+        chatMessages: document.getElementById('chat-messages'),
+        fileInput: document.getElementById('file-input'),
+        contextFileInput: document.getElementById('context-file-input'),
+        fileListDiv: document.getElementById('file-list'),
+        contextFileListDiv: document.getElementById('context-file-list'),
+        uploadButton: document.getElementById('upload-button'),
+        uploadStatus: document.getElementById('upload-status'),
+        connectionStatus: document.getElementById('connectionStatus'),
+        connectionText: document.getElementById('connectionText'),
+        dataUploadArea: document.getElementById('dataUploadArea'),
+        contextUploadArea: document.getElementById('contextUploadArea')
+    };
+
+    // Utility functions
+    function formatSQL(sql) {
+        if (!sql) return '';
+        
+        try {
+            // Simple formatting: just add line breaks before major keywords
+            sql = sql.trim();
+            
+            // Add line breaks before major SQL keywords
+            sql = sql.replace(/\b(FROM|WHERE|JOIN|ORDER BY|GROUP BY|LIMIT)\b/gi, '\n$1');
+            
+            // Clean up and return
+            return sql.replace(/^\n/, '').trim();
+        } catch (error) {
+            console.warn('SQL formatting error:', error);
+            // Return original SQL if formatting fails
+            return sql || '';
+        }
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function sanitizeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function showConnectionStatus(isOnline) {
+        elements.connectionStatus.className = `connection-status ${isOnline ? 'online' : 'offline'}`;
+        elements.connectionText.textContent = isOnline ? 'Connected' : 'Disconnected';
+        elements.connectionStatus.style.display = 'block';
+        
+        setTimeout(() => {
+            elements.connectionStatus.style.display = 'none';
+        }, 3000);
+    }
+
+    // Loading state management
+    function setLoadingState(button, isLoading, normalContent) {
+        button.disabled = isLoading;
+        if (isLoading) {
+            button.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+        } else {
+            button.innerHTML = normalContent;
+        }
+    }
+
+    function updateUploadStatus(message, type) {
+        elements.uploadStatus.textContent = message;
+        elements.uploadStatus.className = `status-message status-${type}`;
+        elements.uploadStatus.style.display = 'block';
+        
+        if (type === 'success') {
+            setTimeout(() => {
+                elements.uploadStatus.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    // File management
+    function validateFile(file) {
+        if (file.size > CONFIG.MAX_FILE_SIZE) {
+            return `File "${file.name}" is too large. Maximum size is ${formatFileSize(CONFIG.MAX_FILE_SIZE)}.`;
+        }
+        return null;
+    }
+
+    function updateUploadButtonState() {
+        const hasDataFiles = elements.fileInput.files.length > 0;
+        const hasContextFile = elements.contextFileInput.files.length > 0;
+        elements.uploadButton.disabled = !(hasDataFiles || hasContextFile);
+    }
+
+    function removeFile(inputElement, fileName, listElement) {
+        const dt = new DataTransfer();
+        const files = Array.from(inputElement.files);
+        
+        files.forEach(file => {
+            if (file.name !== fileName) {
+                dt.items.add(file);
+            }
+        });
+        
+        inputElement.files = dt.files;
+        displayFiles(inputElement, listElement);
+    }
+
+    function displayFiles(inputElement, listElement) {
+        listElement.innerHTML = '';
+        
+        if (inputElement.files.length > 0) {
+            Array.from(inputElement.files).forEach(file => {
+                const validationError = validateFile(file);
+                
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                
+                if (validationError) {
+                    fileItem.style.borderColor = 'var(--error-color)';
+                    fileItem.style.backgroundColor = '#fef2f2';
+                }
+                
+                fileItem.innerHTML = `
+                    <span class="file-name" title="${sanitizeHTML(file.name)}">${sanitizeHTML(file.name)}</span>
+                    <span class="file-size">${formatFileSize(file.size)}</span>
+                    <span class="remove-file" onclick="removeFile(${inputElement === elements.fileInput ? 'elements.fileInput' : 'elements.contextFileInput'}, '${sanitizeHTML(file.name)}', ${listElement === elements.fileListDiv ? 'elements.fileListDiv' : 'elements.contextFileListDiv'})" title="Remove file">×</span>
+                `;
+                
+                if (validationError) {
+                    const errorMsg = document.createElement('div');
+                    errorMsg.style.color = 'var(--error-color)';
+                    errorMsg.style.fontSize = '0.75rem';
+                    errorMsg.style.marginTop = '4px';
+                    errorMsg.textContent = validationError;
+                    fileItem.appendChild(errorMsg);
+                }
+                
+                listElement.appendChild(fileItem);
+            });
+        }
+        
+        updateUploadButtonState();
+    }
+
+    // Drag and drop functionality
+    function setupDragAndDrop(uploadArea, fileInput) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'), false);
+        });
+
+        uploadArea.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (fileInput.multiple) {
+                const existingFiles = Array.from(fileInput.files);
+                const newFiles = Array.from(files);
+                const combined = new DataTransfer();
+                
+                [...existingFiles, ...newFiles].forEach(file => combined.items.add(file));
+                fileInput.files = combined.files;
+            } else {
+                fileInput.files = files;
+            }
+            
+            displayFiles(fileInput, fileInput === elements.fileInput ? elements.fileListDiv : elements.contextFileListDiv);
+        }
+    }
+
+    // Chat functionality
+    function addMessageToUI(role, content, sql = null, graph = null, suggestedQueries = null, paginationInfo = null, sqlOptimization = null, optimizationRecommendations = null, originalSql = null, optimizationApplied = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${role.toLowerCase()}`;
+        
+        // Check if content contains HTML table or formatted content
+        const isFormattedHTML = content.includes('<table') || content.includes('<div style=');
+        let bubbleContent;
+        
+        if (isFormattedHTML) {
+            // Content is pre-formatted HTML from the response formatter
+            bubbleContent = `<div>${content}</div>`;
+        } else {
+            // Plain text content that needs sanitization
+            bubbleContent = `<div>${sanitizeHTML(content).replace(/\n/g, '<br>')}</div>`;
+        }
+
+        if (sql) {
+            const formattedSQL = formatSQL(sql);
+            bubbleContent += `<div class="sql-block"><pre><code>${sanitizeHTML(formattedSQL)}</code></pre></div>`;
+        }
+        
+        // Add SQL optimization info if available
+        if (sqlOptimization && (optimizationRecommendations || optimizationApplied)) {
+            let optimizationHTML = `<div class="optimization-block">
+                <div class="optimization-header">
+                    <span class="optimization-title">⚡ SQL Optimization</span>`;
+            
+            if (optimizationApplied) {
+                optimizationHTML += `<span class="optimization-status applied">Applied</span>`;
+            } else {
+                optimizationHTML += `<span class="optimization-status available">Recommendations Available</span>`;
+            }
+            
+            optimizationHTML += `</div>`;
+            
+            // Show performance improvement if available
+            if (sqlOptimization.performance_improvement) {
+                optimizationHTML += `<div class="optimization-improvement">
+                    📈 Estimated improvement: ${sqlOptimization.performance_improvement}%
+                </div>`;
+            }
+            
+            // Show confidence score if available
+            if (sqlOptimization.confidence_score) {
+                optimizationHTML += `<div class="optimization-confidence">
+                    🎯 Confidence: ${Math.round(sqlOptimization.confidence_score * 100)}%
+                </div>`;
+            }
+            
+            // Show recommendations
+            if (optimizationRecommendations && optimizationRecommendations.length > 0) {
+                optimizationHTML += `<div class="optimization-recommendations">
+                    <div class="recommendations-title">💡 Recommendations:</div>
+                    <ul class="recommendations-list">`;
+                
+                optimizationRecommendations.forEach(rec => {
+                    optimizationHTML += `<li class="recommendation-item">
+                        <strong>${rec.type || rec.category}:</strong> ${rec.description || rec.suggestion}
+                    </li>`;
+                });
+                
+                optimizationHTML += `</ul></div>`;
+            }
+            
+            // Show original SQL if optimization was applied
+            if (originalSql && originalSql !== sql) {
+                optimizationHTML += `<details class="original-sql-details">
+                    <summary class="original-sql-summary">View Original SQL</summary>
+                    <div class="original-sql-block">
+                        <pre><code>${sanitizeHTML(formatSQL(originalSql))}</code></pre>
+                    </div>
+                </details>`;
+            }
+            
+            optimizationHTML += `</div>`;
+            bubbleContent += optimizationHTML;
+        }
+        
+        if (graph) {
+            bubbleContent += `<div class="graph-block"><img src="data:image/png;base64,${graph}" alt="Generated Graph" loading="lazy"></div>`;
+        }
+
+        // Add pagination controls if pagination info exists
+        if (paginationInfo && paginationInfo.total_count > paginationInfo.page_size) {
+            const totalPages = Math.ceil(paginationInfo.total_count / paginationInfo.page_size);
+            currentPage = paginationInfo.current_page;
+            pageSize = paginationInfo.page_size;
+            
+            bubbleContent += `<div class="pagination-controls">
+                <div class="pagination-info">
+                    Showing ${paginationInfo.start_row} to ${paginationInfo.end_row} of ${paginationInfo.total_count} results
+                </div>
+                <div class="pagination-buttons">
+                    <button class="pagination-btn" onclick="loadPage(${currentPage - 1})" 
+                            ${currentPage <= 1 ? 'disabled' : ''}>
+                        ← Previous
+                    </button>
+                    <span class="page-indicator">Page ${currentPage} of ${totalPages}</span>
+                    <button class="pagination-btn" onclick="loadPage(${currentPage + 1})" 
+                            ${currentPage >= totalPages ? 'disabled' : ''}>
+                        Next →
+                    </button>
+                </div>
+            </div>`;
+        }
+
+        // Only show suggestions if they exist and are not empty
+        if (suggestedQueries && Array.isArray(suggestedQueries) && suggestedQueries.length > 0) {
+            let validSuggestions = suggestedQueries.filter(opt => opt && opt.query && opt.explanation);
+            
+            if (validSuggestions.length > 0) {
+                let optionsHTML = `<div class="suggestion-options">
+                                    <span class="suggestion-header">Not quite right? Try one of these interpretations:</span>`;
+                
+                validSuggestions.forEach((opt, index) => {
+                    const queryPreview = opt.query.replace(/\s+/g, ' ').trim();
+                    optionsHTML += `
+                        <button class="suggestion-btn" onclick="useSuggestion('${sanitizeHTML(opt.query).replace(/'/g, '&#039;')}')">
+                            <div class="explanation">${sanitizeHTML(opt.explanation)}</div>
+                            <div class="query-preview">${sanitizeHTML(queryPreview)}</div>
+                        </button>`;
+                });
+                optionsHTML += '</div>';
+                bubbleContent += optionsHTML;
+            }
+        }
+
+        messageDiv.innerHTML = `<div class="message-bubble">${bubbleContent}</div>`;
+        elements.chatMessages.appendChild(messageDiv);
+        elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+    }
+
+    function useSuggestion(query) {
+        const decodedQuery = query.replace(/&#039;/g, "'");
+        elements.messageInput.value = decodedQuery;
+        elements.messageInput.focus();
+    }
+
+    // HITL Clarification Functions
+    function addClarificationMessage(message, clarificationOptions) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message bot';
+        
+        let bubbleContent = `<div>${sanitizeHTML(message)}</div>`;
+        
+        if (clarificationOptions && clarificationOptions.length > 0) {
+            bubbleContent += `<div class="clarification-options">
+                <span class="clarification-header">Please clarify:</span>`;
+            
+            clarificationOptions.forEach((option, index) => {
+                bubbleContent += `
+                    <button class="clarification-btn" onclick="provideClarification('${sanitizeHTML(option).replace(/'/g, '&#039;')}')">
+                        ${sanitizeHTML(option)}
+                    </button>`;
+            });
+            bubbleContent += '</div>';
+        }
+        
+        messageDiv.innerHTML = `<div class="message-bubble">${bubbleContent}</div>`;
+        elements.chatMessages.appendChild(messageDiv);
+        elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+    }
+
+    async function provideClarification(clarification) {
+        if (!clarificationContext) return;
+        
+        const response = await fetch('/chat/clarify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                session_id: clarificationContext.session_id,
+                clarification_response: clarification
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            addMessageToUI('bot', data.answer, data.sql, data.graph, data.suggested_queries, data.pagination_info, 
+                          data.sql_optimization, data.optimization_recommendations, data.original_sql, data.optimization_applied);
+            awaitingClarification = false;
+            clarificationContext = null;
+        }
+    }
+
+    // Pagination Functions
+    function loadPage(pageNumber) {
+        if (!elements.messageInput.value && chatHistory.length >= 2) {
+            // Re-execute the last user query with new page number
+            const lastUserMessage = chatHistory[chatHistory.length - 2];
+            if (lastUserMessage && lastUserMessage.role === 'user') {
+                currentPage = pageNumber;
+                elements.messageInput.value = lastUserMessage.content;
+                sendMessage(pageNumber, pageSize);
+            }
+        }
+    }
+
+    async function sendMessage(page = 1, size = 1000) {
+        const query = elements.messageInput.value.trim();
+        if (!query || isProcessing) return;
+
+        isProcessing = true;
+        addMessageToUI('user', query);
+        
+        // Manage chat history length
+        chatHistory.push({ "role": "user", "content": query });
+        if (chatHistory.length > CONFIG.MAX_CHAT_HISTORY) {
+            chatHistory = chatHistory.slice(-CONFIG.MAX_CHAT_HISTORY);
+        }
+        
+        elements.messageInput.value = '';
+        setLoadingState(elements.sendButton, true, '<span id="sendIcon">→</span>');
+
+        // Add typing indicator
+        const typingIndicator = document.createElement('div');
+        typingIndicator.id = 'typing-indicator';
+        typingIndicator.className = 'message bot';
+        typingIndicator.innerHTML = `<div class="message-bubble"><div class="loading-dots"><span></span><span></span><span></span></div></div>`;
+        elements.chatMessages.appendChild(typingIndicator);
+        elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), CONFIG.CHAT_TIMEOUT);
+
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    query, 
+                    history: chatHistory.slice(0, -1),
+                    page_number: page,
+                    page_size: size
+                }),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Server error' }));
+                throw new Error(errorData.detail || `Server error (${response.status})`);
+            }
+
+            const data = await response.json();
+            
+            // Handle HITL clarifications
+            if (data.requires_clarification) {
+                awaitingClarification = true;
+                clarificationContext = {
+                    session_id: Date.now().toString(),
+                    clarification_options: data.clarification_options
+                };
+                addClarificationMessage(data.answer, data.clarification_options);
+            } else {
+                addMessageToUI('bot', data.answer, data.sql, data.graph, data.suggested_queries, data.pagination_info,
+                              data.sql_optimization, data.optimization_recommendations, data.original_sql, data.optimization_applied);
+                awaitingClarification = false;
+            }
+            
+            chatHistory.push({ "role": "assistant", "content": data.answer });
+            showConnectionStatus(true);
+
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                addMessageToUI('bot', '⏱️ Request timed out. Please try again with a simpler query.');
+            } else {
+                addMessageToUI('bot', `❌ Error: ${error.message}`);
+                showConnectionStatus(false);
+            }
+        } finally {
+            typingIndicator.remove();
+            isProcessing = false;
+            setLoadingState(elements.sendButton, false, '<span id="sendIcon">→</span>');
+            elements.messageInput.focus();
+        }
+    }
+
+    // Upload functionality
+    async function uploadFiles() {
+        if (elements.fileInput.files.length === 0 && elements.contextFileInput.files.length === 0) {
+            updateUploadStatus('Please choose at least one file to upload.', 'error');
+            return;
+        }
+
+        // Validate all files
+        const allFiles = [...elements.fileInput.files, ...elements.contextFileInput.files];
+        for (const file of allFiles) {
+            const error = validateFile(file);
+            if (error) {
+                updateUploadStatus(error, 'error');
+                return;
+            }
+        }
+
+        const formData = new FormData();
+        Array.from(elements.fileInput.files).forEach(file => formData.append('files', file));
+        if (elements.contextFileInput.files.length > 0) {
+            formData.append('context_file', elements.contextFileInput.files[0]);
+        }
+        
+        setLoadingState(elements.uploadButton, true, 'Upload and Process');
+        updateUploadStatus('Uploading and processing files...', 'loading');
+
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), CONFIG.UPLOAD_TIMEOUT);
+
+            const response = await fetch('/upload', { 
+                method: 'POST', 
+                body: formData,
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.detail || 'Upload failed');
+            }
+
+            updateUploadStatus(result.message, 'success');
+            addMessageToUI('bot', `✅ ${result.message}\n\nYou can now ask questions about your data. Try asking:\n• "How many records are there?"\n• "What are the main categories?"\n• "Show me a summary of the data"`);
+            
+            // Enable chat
+            elements.messageInput.disabled = false;
+            elements.sendButton.disabled = false;
+            elements.messageInput.placeholder = "Ask about your data...";
+            elements.messageInput.focus();
+            
+            showConnectionStatus(true);
+
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                updateUploadStatus('Upload timed out. Please try again.', 'error');
+            } else {
+                updateUploadStatus(`Error: ${error.message}`, 'error');
+            }
+            showConnectionStatus(false);
+        } finally {
+            setLoadingState(elements.uploadButton, false, 'Upload and Process');
+        }
+    }
+
+    // Event listeners
+    elements.fileInput.addEventListener('change', () => displayFiles(elements.fileInput, elements.fileListDiv));
+    elements.contextFileInput.addEventListener('change', () => displayFiles(elements.contextFileInput, elements.contextFileListDiv));
+    elements.uploadButton.addEventListener('click', uploadFiles);
+    elements.sendButton.addEventListener('click', sendMessage);
+    elements.messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // Setup drag and drop
+    setupDragAndDrop(elements.dataUploadArea, elements.fileInput);
+    setupDragAndDrop(elements.contextUploadArea, elements.contextFileInput);
+
+    // Make removeFile function globally available
+    window.removeFile = removeFile;
+    window.useSuggestion = useSuggestion;
+
+    // Initialize
+    console.log('NLQ System UI initialized');
+</script>
+</body>
+</html>

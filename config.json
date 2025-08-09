@@ -1,0 +1,383 @@
+{
+  "system_info": {
+    "name": "Enhanced NLQ Intelligence System",
+    "version": "2.0.0",
+    "description": "Advanced Natural Language Query system with intelligent routing, cost optimization, and hierarchical RAG"
+  },
+  
+  "api": {
+    "title": "Enhanced NLQ Intelligence System",
+    "description": "Advanced Natural Language Query system with AI-powered optimization",
+    "version": "2.0.0",
+    "host": "127.0.0.1",
+    "port": 8000,
+    "cors_enabled": true,
+    "rate_limiting": {
+      "enabled": false,
+      "requests_per_minute": 60
+    }
+  },
+
+  "openai": {
+    "chat_model": "gpt-4o-mini",
+    "fallback_model": "gpt-4o",
+    "temperature": 0,
+    "max_tokens": 4000,
+    "timeout_seconds": 30,
+    "retry_attempts": 3,
+    "model_routing": {
+      "enable_intelligent_routing": true,
+      "cost_threshold_usd": 0.01,
+      "complexity_routing": {
+        "simple": "gpt-4o-mini",
+        "moderate": "gpt-4o-mini", 
+        "complex": "gpt-4o"
+      },
+      "intent_routing": {
+        "lookup": "gpt-4o-mini",
+        "aggregation": "gpt-4o-mini",
+        "comparison": "gpt-4o-mini",
+        "analysis": "gpt-4o",
+        "trend": "gpt-4o",
+        "relationship": "gpt-4o"
+      }
+    }
+  },
+
+  "database": {
+    "default_url": "sqlite:///DATA/plm_updated.db",
+    "postgresql_url": "postgresql://nlq_user:sa@localhost:5432/nlq_plm",
+    "sqlite_fallback": "sqlite:///DATA/plm_updated.db",
+    "connection_pool_size": 20,
+    "connection_timeout": 30,
+    "query_timeout": 120,
+    "enable_query_logging": true,
+    "enable_statistics_collection": true,
+    "optimization": {
+      "enable_query_plans": true,
+      "enable_indexing_hints": true,
+      "max_result_rows": 50000,
+      "enable_connection_pooling": true,
+      "enable_async_queries": false
+    },
+    "statistics": {
+      "enable_row_counts": true,
+      "enable_column_statistics": true,
+      "enable_index_analysis": true,
+      "cache_statistics_hours": 6
+    }
+  },
+
+  "query_classification": {
+    "enable_classification": true,
+    "enable_cost_optimization": true,
+    "confidence_threshold": 0.7,
+    "complexity_factors": {
+      "word_count_weight": 0.2,
+      "pattern_match_weight": 0.3,
+      "sql_complexity_weight": 0.3,
+      "domain_context_weight": 0.2
+    },
+    "domain_detection": {
+      "enable_domain_classification": true,
+      "use_context_for_domain": true
+    }
+  },
+
+  "rag_system": {
+    "type": "hierarchical",
+    "storage_dir": "rag_storage",
+    "use_cache": true,
+    "cache_ttl_hours": 24,
+    "embedding_model": "text-embedding-3-small",
+    "domain_embedding_model": "text-embedding-3-large",
+    "retrieval_layers": {
+      "business_rules": {
+        "enabled": true,
+        "priority": "high",
+        "max_results": 3,
+        "similarity_threshold": 0.7
+      },
+      "schema": {
+        "enabled": true,
+        "priority": "high",
+        "max_results": 5,
+        "similarity_threshold": 0.6
+      },
+      "samples": {
+        "enabled": true,
+        "priority": "medium",
+        "max_results": 5,
+        "similarity_threshold": 0.65,
+        "max_values_per_column": 15
+      },
+      "statistics": {
+        "enabled": true,
+        "priority": "medium",
+        "max_results": 3,
+        "include_data_profiling": true
+      },
+      "relationships": {
+        "enabled": true,
+        "priority": "high",
+        "max_results": 4,
+        "include_cardinality_analysis": true
+      },
+      "query_patterns": {
+        "enabled": true,
+        "priority": "low",
+        "max_results": 3
+      }
+    },
+    "context_optimization": {
+      "adaptive_token_budget": true,
+      "base_budgets": {
+        "simple": 2000,
+        "moderate": 3000,
+        "complex": 4500
+      },
+      "enable_context_compression": true,
+      "compression_threshold": 0.8
+    }
+  },
+
+  "memory": {
+    "max_turns": 20,
+    "enable_vector_search": true,
+    "default_recent_history": 15,
+    "optional_retrieval_count": 5,
+    "optional_recent_count": 10,
+    "similarity_threshold": 0.5,
+    "response_truncation_limit": 500,
+    "embedding_cache_size": 1000,
+    "semantic_search": {
+      "enabled": true,
+      "use_advanced_similarity": true,
+      "context_window_size": 5
+    }
+  },
+
+  "sql_optimization": {
+    "enabled": true,
+    "default_optimization_level": "BASIC",
+    "enable_explain_analysis": true,
+    "enable_query_rewriting": true,
+    "confidence_threshold": 0.7,
+    "performance_improvement_threshold": 5.0,
+    "optimization_features": {
+      "index_recommendations": true,
+      "query_structure_optimization": true,
+      "join_order_optimization": true,
+      "predicate_optimization": true,
+      "subquery_optimization": true
+    },
+    "safety_checks": {
+      "validate_read_only": true,
+      "preserve_original_query": true,
+      "require_confidence_threshold": true
+    },
+    "database_support": {
+      "sqlite": {
+        "enabled": true,
+        "explain_command": "EXPLAIN QUERY PLAN"
+      },
+      "postgresql": {
+        "enabled": true,
+        "explain_command": "EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)"
+      },
+      "mysql": {
+        "enabled": true,
+        "explain_command": "EXPLAIN FORMAT=JSON"
+      }
+    }
+  },
+
+  "cost_optimization": {
+    "enable_optimization": true,
+    "enable_result_caching": true,
+    "enable_context_caching": true,
+    "max_cache_entries": 1000,
+    "cache_ttl_hours": 24,
+    "similarity_threshold": 0.88,
+    "cost_tracking": {
+      "enable_detailed_tracking": true,
+      "track_model_usage": true,
+      "track_token_usage": true,
+      "generate_cost_reports": true
+    },
+    "optimization_strategies": {
+      "intelligent_model_routing": true,
+      "context_reuse": true,
+      "result_caching": true,
+      "query_normalization": true
+    },
+    "budget_controls": {
+      "max_cost_per_query": 0.05,
+      "daily_budget_limit": 10.0,
+      "enable_budget_alerts": true
+    }
+  },
+
+  "scalability": {
+    "async_processing": {
+      "enabled": true,
+      "celery_broker_url": "redis://localhost:6379/0",
+      "celery_result_backend": "redis://localhost:6379/0",
+      "task_timeout_minutes": 30,
+      "max_concurrent_tasks": 5
+    },
+    "caching": {
+      "enabled": true,
+      "redis_url": "redis://localhost:6379/1",
+      "multi_level_caching": true,
+      "cache_layers": ["sql_results", "llm_responses", "final_responses", "rag_contexts"],
+      "compression_enabled": true,
+      "fallback_to_memory": true
+    },
+    "sql_validation": {
+      "enabled": true,
+      "validate_syntax": true,
+      "validate_schema": true,
+      "validate_security": true,
+      "performance_analysis": true,
+      "auto_optimization": false
+    },
+    "database_statistics": {
+      "enabled": true,
+      "collect_on_startup": true,
+      "collect_row_counts": true,
+      "collect_column_stats": true,
+      "collect_index_stats": true,
+      "cache_statistics_hours": 6
+    },
+    "connection_management": {
+      "pool_size": 20,
+      "pool_timeout": 30,
+      "pool_recycle_hours": 1,
+      "enable_pool_pre_ping": true
+    }
+  },
+
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "enhanced_tracking": true,
+    "log_file_rotation": {
+      "enabled": true,
+      "max_file_size_mb": 50,
+      "backup_count": 5
+    },
+    "session_logging": {
+      "enabled": true,
+      "include_llm_calls": true,
+      "include_performance_metrics": true,
+      "include_cost_tracking": true,
+      "log_directory": "logs"
+    },
+    "metrics_collection": {
+      "enable_performance_metrics": true,
+      "enable_quality_metrics": true,
+      "enable_usage_analytics": true
+    }
+  },
+
+  "features": {
+    "enable_vector_search": true,
+    "enable_query_classification": true,
+    "enable_model_routing": true,
+    "enable_cost_optimization": true,
+    "enable_caching": true,
+    "enable_performance_tracking": true,
+    "enable_quality_assurance": true,
+    "experimental_features": {
+      "enable_query_explanation": false,
+      "enable_auto_visualization": true,
+      "enable_query_suggestions": false
+    }
+  },
+
+  "performance": {
+    "query_timeout_seconds": 60,
+    "max_concurrent_queries": 5,
+    "enable_async_processing": false,
+    "memory_limits": {
+      "max_memory_mb": 1024,
+      "cache_memory_limit_mb": 256
+    },
+    "optimization": {
+      "enable_query_parallelization": false,
+      "enable_result_streaming": false,
+      "enable_lazy_loading": true
+    }
+  },
+
+  "security": {
+    "enable_query_validation": true,
+    "allowed_sql_operations": ["SELECT"],
+    "blocked_sql_operations": ["DELETE", "UPDATE", "INSERT", "DROP", "ALTER", "TRUNCATE", "CREATE", "REPLACE"],
+    "enable_input_sanitization": true,
+    "max_query_length": 1000,
+    "rate_limiting": {
+      "enabled": false,
+      "requests_per_minute": 60,
+      "requests_per_hour": 1000
+    }
+  },
+
+  "ui": {
+    "theme": "enhanced",
+    "enable_dark_mode": true,
+    "show_performance_metrics": true,
+    "show_cost_information": true,
+    "enable_query_history": true,
+    "max_history_items": 50,
+    "visualization": {
+      "default_chart_type": "auto",
+      "enable_interactive_charts": true,
+      "chart_color_scheme": "professional"
+    }
+  },
+
+  "file_processing": {
+    "supported_formats": ["csv", "xlsx", "xls"],
+    "max_file_size_mb": 100,
+    "max_files_per_upload": 10,
+    "auto_detect_encoding": true,
+    "data_validation": {
+      "enable_schema_validation": true,
+      "enable_data_quality_checks": true,
+      "max_null_percentage": 0.5
+    }
+  },
+
+  "llm_settings": {
+    "primary_model": "gpt-4o-mini",
+    "fallback_model": "gpt-4o",
+    "temperature": 0,
+    "max_tokens": 4000,
+    "timeout_seconds": 30,
+    "enable_token_counting": true,
+    "enable_cost_tracking": true
+  },
+
+  "agent": {
+    "enable_session_management": true,
+    "enable_conversation_memory": true,
+    "max_conversation_history": 10,
+    "enable_context_compression": true,
+    "session_timeout_minutes": 30,
+    "memory_compression_threshold": 5000
+  },
+
+  "monitoring": {
+    "enable_health_checks": true,
+    "enable_metrics_collection": true,
+    "enable_alerting": false,
+    "metrics_retention_days": 30,
+    "health_check_endpoints": [
+      "/health",
+      "/system/status", 
+      "/intelligence/metrics"
+    ]
+  }
+}

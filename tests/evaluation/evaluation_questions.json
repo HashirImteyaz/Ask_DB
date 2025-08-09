@@ -1,0 +1,97 @@
+[
+  {
+    "Difficulty":"Easy",
+    "Human Question":"What are all the ingredient names and codes?",
+    "SQL Query":"SELECT SpecCode, SpecDescription\nFROM Specifications\nWHERE SpecGroupCode = 'ING';"
+  },
+  {
+    "Difficulty":"Easy",
+    "Human Question":"List all recipe names (CUC type) with their status.",
+    "SQL Query":"SELECT SpecCode, SpecDescription, SpecStatusDescription\nFROM Specifications\nWHERE SpecGroupCode = 'CUC';"
+  },
+  {
+    "Difficulty":"Easy",
+    "Human Question":"What is the country and BU code for each recipe manufactured?",
+    "SQL Query":"SELECT DISTINCT CUCSpecCode, CUCPlantCountryName, CUCPlantBUCode\nFROM RecipeExplosion;"
+  },
+  {
+    "Difficulty":"Medium",
+    "Human Question":"List all recipes along with their ingredients and their percentage contribution.",
+    "SQL Query":"SELECT re.CUCSpecCode, re.INGSpecCode, re.Ing2CUC_PercentageContribution\nFROM RecipeExplosion re;"
+  },
+  {
+    "Difficulty":"Medium",
+    "Human Question":"Get all ingredient specifications used in a recipe named 'Spicy Tomato Sauce'.",
+    "SQL Query":"SELECT i.SpecCode, i.SpecDescription\nFROM RecipeExplosion re\nJOIN Specifications r ON re.CUCSpecCode = r.SpecCode\nJOIN Specifications i ON re.INGSpecCode = i.SpecCode\nWHERE r.SpecDescription = 'Spicy Tomato Sauce';"
+  },
+  {
+    "Difficulty":"Medium",
+    "Human Question":"Show all ingredients used in 'Released' recipes only.",
+    "SQL Query":"SELECT DISTINCT i.SpecCode, i.SpecDescription\nFROM RecipeExplosion re\nJOIN Specifications r ON re.CUCSpecCode = r.SpecCode\nJOIN Specifications i ON re.INGSpecCode = i.SpecCode\nWHERE r.SpecStatusDescription = 'Released';"
+  },
+  {
+    "Difficulty":"Hard",
+    "Human Question":"What is the total absolute mass of 'Salt' in all recipes?",
+    "SQL Query":"SELECT r.SpecDescription AS Recipe, SUM(re.Ing2CUC_QuantityContribution * s.AVG_VAL \/ 100.0) AS AbsoluteSaltMass\nFROM RecipeExplosion re\nJOIN Specifications r ON re.CUCSpecCode = r.SpecCode\nJOIN Specifications s ON re.INGSpecCode = s.SpecCode\nWHERE s.SpecDescription LIKE '%Salt%' AND s.UOM = '%'\nGROUP BY r.SpecDescription;"
+  },
+  {
+    "Difficulty":"Hard",
+    "Human Question":"Which business group (e.g., ZHPC, ZFOD) uses the most different ingredients across all recipes?",
+    "SQL Query":"SELECT r.AuthorisationGroupCode, COUNT(DISTINCT re.INGSpecCode) AS IngredientCount\nFROM RecipeExplosion re\nJOIN Specifications r ON re.CUCSpecCode = r.SpecCode\nGROUP BY r.AuthorisationGroupCode\nORDER BY IngredientCount DESC;"
+  },
+  {
+    "Difficulty":"Hard",
+    "Human Question":"Find recipes made in 'South Asia' using 'Home and Hygiene' ingredients.",
+    "SQL Query":"SELECT DISTINCT r.SpecCode, r.SpecDescription\nFROM RecipeExplosion re\nJOIN Specifications r ON re.CUCSpecCode = r.SpecCode\nJOIN Specifications i ON re.INGSpecCode = i.SpecCode\nWHERE re.CUCPlantBUCode = 'SA' AND i.AuthorisationGroupCode = 'ZHSC';"
+  },
+  {
+    "Difficulty":"Easy",
+    "Human Question":"How many total recipes are there in the system?",
+    "SQL Query":"SELECT COUNT(*) AS TotalRecipes\nFROM Specifications\nWHERE SpecGroupCode = 'CUC';"
+  },
+  {
+    "Difficulty":"Easy",
+    "Human Question":"How many total ingredients are there in the system?",
+    "SQL Query":"SELECT COUNT(*) AS TotalIngredients\nFROM Specifications\nWHERE SpecGroupCode = 'ING';"
+  },
+  {
+    "Difficulty":"Medium",
+    "Human Question":"List recipes along with the total number of ingredients they use.",
+    "SQL Query":"SELECT re.CUCSpecCode, COUNT(re.INGSpecCode) AS IngredientCount\nFROM RecipeExplosion re\nGROUP BY re.CUCSpecCode;"
+  },
+  {
+    "Difficulty":"Medium",
+    "Human Question":"Which countries are involved in recipe manufacturing?",
+    "SQL Query":"SELECT DISTINCT CUCPlantCountryName\nFROM RecipeExplosion;"
+  },
+  {
+    "Difficulty":"Medium",
+    "Human Question":"List all recipes with their associated plant ownership flag.",
+    "SQL Query":"SELECT DISTINCT CUCSpecCode, CUCPlantOwnershipFlag\nFROM RecipeExplosion;"
+  },
+  {
+    "Difficulty":"Hard",
+    "Human Question":"Find all recipes that use a specific ingredient, like 'Sugar'.",
+    "SQL Query":"SELECT DISTINCT r.SpecCode, r.SpecDescription\nFROM RecipeExplosion re\nJOIN Specifications r ON re.CUCSpecCode = r.SpecCode\nJOIN Specifications i ON re.INGSpecCode = i.SpecCode\nWHERE i.SpecDescription LIKE '%Sugar%';"
+  },
+  {
+    "Difficulty":"Hard",
+    "Human Question":"Which ingredients appear in more than 5 different recipes?",
+    "SQL Query":"SELECT re.INGSpecCode, COUNT(DISTINCT re.CUCSpecCode) AS RecipeCount\nFROM RecipeExplosion re\nGROUP BY re.INGSpecCode\nHAVING COUNT(DISTINCT re.CUCSpecCode) > 5;"
+  },
+  {
+    "Difficulty":"Hard",
+    "Human Question":"List all recipes that contain more than 3 ingredients and are manufactured in Europe.",
+    "SQL Query":"SELECT re.CUCSpecCode\nFROM RecipeExplosion re\nJOIN Specifications s ON re.CUCSpecCode = s.SpecCode\nWHERE re.CUCPlantBUCode = 'EU'\nGROUP BY re.CUCSpecCode\nHAVING COUNT(re.INGSpecCode) > 3;"
+  },
+  {
+    "Difficulty":"Hard",
+    "Human Question":"Which ingredient has the highest average quantity contribution across all recipes?",
+    "SQL Query":"SELECT INGSpecCode\nFROM RecipeExplosion\nGROUP BY INGSpecCode\nORDER BY AVG(Ing2CUC_QuantityContribution) DESC\nLIMIT 1;"
+  },
+  {
+    "Difficulty":"Hard",
+    "Human Question":"Get the top 5 recipes using the highest total percentage of ingredients.",
+    "SQL Query":"SELECT TOP 1 INGSpecCode\nFROM RecipeExplosion\nGROUP BY INGSpecCode\nORDER BY AVG(Ing2CUC_QuantityContribution) DESC;"
+  }
+]
