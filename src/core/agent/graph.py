@@ -28,6 +28,16 @@ from .query_classifier import get_query_classifier, get_model_router, QueryClass
 from .llm_tracker import TokenTrackingLLM, get_global_tracker
 from src.core.data_processing.vectors import HierarchicalRAGSystem, RetrievalContext
 from src.core.data_processing.vectors import combine_retriever_results
+# Import enhanced multiple retrieval system
+try:
+    from src.core.integration.multi_retrieval_integration import (
+        EnhancedRetrievalOrchestrator,
+        enhanced_combine_retriever_results
+    )
+    from src.core.agent.enhanced_graph_integration import EnhancedRAGNode
+    ENHANCED_RETRIEVAL_AVAILABLE = True
+except ImportError:
+    ENHANCED_RETRIEVAL_AVAILABLE = False
 
 # Load configuration
 try:
@@ -40,6 +50,7 @@ except FileNotFoundError:
 APP_STATE: Dict[str, Any] = {
     "retrievers": None,
     "rag_system": None,
+    "enhanced_rag_node": None,  # Add enhanced RAG node
     "query_classifier": None,
     "model_router": None
 }
@@ -494,12 +505,31 @@ def enhanced_sql_generation_node(state: AgentState) -> AgentState:
         token_budget=base_budget
     )
     
-    # Get intelligent context
-    if isinstance(APP_STATE["rag_system"], HierarchicalRAGSystem):
-        rag_context = APP_STATE["rag_system"].intelligent_retrieve(retrieval_context)
+    # ENHANCED: Try to use the new multiple retrieval system first
+    if ENHANCED_RETRIEVAL_AVAILABLE and APP_STATE.get("enhanced_rag_node"):
+        try:
+            # Use enhanced multiple retrieval system
+            enhanced_result = APP_STATE["enhanced_rag_node"].enhanced_rag_retrieval(state)
+            rag_context = enhanced_result.get('rag_context', '')
+            
+            # Add metadata to state for debugging
+            state.retrieval_metadata = enhanced_result.get('retrieval_metadata', {})
+            state.enhanced_retrieval_used = enhanced_result.get('enhanced_retrieval_used', False)
+            
+        except Exception as e:
+            print(f"Enhanced retrieval failed, falling back to legacy: {e}")
+            # Fallback to existing system
+            if isinstance(APP_STATE["rag_system"], HierarchicalRAGSystem):
+                rag_context = APP_STATE["rag_system"].intelligent_retrieve(retrieval_context)
+            else:
+                rag_context = combine_retriever_results(APP_STATE["retrievers"], state.clarified_query or state.user_query, base_budget)
     else:
-        # Fallback to legacy system
-        rag_context = combine_retriever_results(APP_STATE["retrievers"], state.clarified_query or state.user_query, base_budget)
+        # Use existing retrieval system
+        if isinstance(APP_STATE["rag_system"], HierarchicalRAGSystem):
+            rag_context = APP_STATE["rag_system"].intelligent_retrieve(retrieval_context)
+        else:
+            # Fallback to legacy system
+            rag_context = combine_retriever_results(APP_STATE["retrievers"], state.clarified_query or state.user_query, base_budget)
     
     # Add similar query context if available
     conversation_context = ""
@@ -945,6 +975,17 @@ def initialize_enhanced_system(engine, schema_data=None):
         retrievers = rag_system.build_enhanced_retrievers(schema_data)
         APP_STATE["retrievers"] = retrievers
         print(f"Retrievers built successfully: {type(retrievers)}")
+        
+        # ENHANCED: Initialize the new multiple retrieval system
+        if ENHANCED_RETRIEVAL_AVAILABLE:
+            try:
+                print("Initializing Enhanced Multiple Retrieval System...")
+                enhanced_rag_node = EnhancedRAGNode(engine, schema_data)
+                APP_STATE["enhanced_rag_node"] = enhanced_rag_node
+                print("✅ Enhanced Multiple Retrieval System initialized successfully!")
+            except Exception as e:
+                print(f"⚠️ Enhanced retrieval system failed to initialize: {e}")
+                print("Continuing with standard RAG system...")
         
         # Initialize classifier and router
         print("Initializing query classifier...")

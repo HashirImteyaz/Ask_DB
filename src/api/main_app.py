@@ -193,6 +193,15 @@ async def lifespan(app: FastAPI):
                     logger.info(f"[PASS] Connected to database with {len(table_names)} tables")
                     logger.info("[PASS] Enhanced Hierarchical RAG System initialized")
                     
+                    # ENHANCED: Try to initialize enhanced multiple retrieval system
+                    try:
+                        from src.core.integration.multi_retrieval_integration import create_enhanced_retrieval_orchestrator
+                        enhanced_orchestrator = create_enhanced_retrieval_orchestrator(ENGINE)
+                        APP_STATE["enhanced_orchestrator"] = enhanced_orchestrator
+                        logger.info("[PASS] ✅ Enhanced Multiple Retrieval System initialized!")
+                    except Exception as e:
+                        logger.warning(f"[INFO] Enhanced retrieval system not available: {e}")
+                    
                     # Also initialize the agent graph's APP_STATE
                     from src.core.agent.graph import initialize_enhanced_system
                     initialize_enhanced_system(ENGINE)
