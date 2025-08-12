@@ -75,9 +75,38 @@ class ColumnDescriptionRetriever:
         documents = []
         column_descriptions = self.schema_data.get("column_descriptions", {})
         
+        # Print extracted column descriptions from schema
+        print("\n🔍 EXTRACTING COLUMN DESCRIPTIONS FROM SCHEMA:")
+        print("=" * 60)
+        if column_descriptions:
+            for table_name, columns in column_descriptions.items():
+                print(f"📋 Table: {table_name}")
+                for col_name, col_desc in columns.items():
+                    print(f"  └── Column: {col_name} → {col_desc}")
+                print()
+        else:
+            print("⚠️ No column descriptions found in schema data")
+        print("=" * 60)
+        
         inspector = inspect(self.engine)
         
         with self.engine.connect() as conn:
+            # Print database structure for comparison
+            db_tables = inspector.get_table_names()
+            print(f"\n🗃️ DATABASE STRUCTURE DETECTED:")
+            print("=" * 50)
+            print(f"📋 Tables in database: {len(db_tables)}")
+            for table_name in db_tables:
+                columns = inspector.get_columns(table_name)
+                print(f"  └── {table_name} ({len(columns)} columns)")
+                for col in columns[:3]:  # Show first 3 columns
+                    print(f"      • {col['name']} ({col['type']})")
+                if len(columns) > 3:
+                    print(f"      ... and {len(columns) - 3} more columns")
+            print("=" * 50)
+            
+            print(f"\n🔄 PROCESSING COLUMN DESCRIPTIONS:")
+            print("=" * 50)
             for table_name in inspector.get_table_names():
                 try:
                     columns = inspector.get_columns(table_name)
@@ -88,6 +117,12 @@ class ColumnDescriptionRetriever:
                         
                         # Get column description from schema data
                         col_desc = column_descriptions.get(table_name, {}).get(col_name, "")
+                        
+                        # Print extraction details for each column
+                        if col_desc:
+                            print(f"✅ MATCHED: {table_name}.{col_name} → '{col_desc}'")
+                        else:
+                            print(f"❌ NO DESC: {table_name}.{col_name} (using DB introspection only)")
                         
                         # Create comprehensive column document
                         col_text = f"Column: {table_name}.{col_name}\n"
@@ -265,13 +300,31 @@ class TableDescriptionRetriever:
         documents = []
         table_descriptions = self.schema_data.get("table_descriptions", {})
         
+        # Print extracted table descriptions from schema
+        print("\n🏗️ EXTRACTING TABLE DESCRIPTIONS FROM SCHEMA:")
+        print("=" * 60)
+        if table_descriptions:
+            for table_name, table_desc in table_descriptions.items():
+                print(f"📋 Table: {table_name} → '{table_desc}'")
+        else:
+            print("⚠️ No table descriptions found in schema data")
+        print("=" * 60)
+        
         inspector = inspect(self.engine)
         
         with self.engine.connect() as conn:
+            print(f"\n🔄 PROCESSING TABLE DESCRIPTIONS:")
+            print("=" * 50)
             for table_name in inspector.get_table_names():
                 try:
                     # Get table description from schema data
                     table_desc = table_descriptions.get(table_name, "")
+                    
+                    # Print extraction details for each table
+                    if table_desc:
+                        print(f"✅ MATCHED: Table '{table_name}' → '{table_desc}'")
+                    else:
+                        print(f"❌ NO DESC: Table '{table_name}' (using DB introspection only)")
                     
                     # Create comprehensive table document
                     table_text = f"Table: {table_name}\n"
@@ -444,6 +497,9 @@ class MultiRetrievalSystem:
         self.schema_data = schema_data or {}
         self.config = config or {}
         
+        # Print schema data summary
+        self._print_schema_summary()
+        
         # Initialize specialized retrievers
         self.column_retriever = ColumnDescriptionRetriever(engine, schema_data)
         self.table_retriever = TableDescriptionRetriever(engine, schema_data)
@@ -452,6 +508,42 @@ class MultiRetrievalSystem:
         self.default_token_budget = self.config.get('default_token_budget', 3000)
         self.column_weight = self.config.get('column_weight', 0.6)
         self.table_weight = self.config.get('table_weight', 0.4)
+        
+        # Print initialization summary
+        self._print_initialization_summary()
+    
+    def _print_schema_summary(self):
+        """Print summary of schema data provided."""
+        print("\n🚀 INITIALIZING MULTIPLE RETRIEVAL SYSTEM")
+        print("=" * 70)
+        
+        table_descriptions = self.schema_data.get("table_descriptions", {})
+        column_descriptions = self.schema_data.get("column_descriptions", {})
+        
+        print(f"📊 Schema Data Summary:")
+        print(f"  • Table descriptions: {len(table_descriptions)} tables")
+        print(f"  • Column descriptions: {sum(len(cols) for cols in column_descriptions.values())} columns across {len(column_descriptions)} tables")
+        
+        if table_descriptions:
+            print(f"  • Tables with descriptions: {', '.join(table_descriptions.keys())}")
+        
+        if column_descriptions:
+            print(f"  • Tables with column descriptions: {', '.join(column_descriptions.keys())}")
+        
+        print("=" * 70)
+    
+    def _print_initialization_summary(self):
+        """Print summary after initialization."""
+        print("\n✅ MULTIPLE RETRIEVAL SYSTEM INITIALIZED")
+        print("=" * 70)
+        print(f"🔧 Configuration:")
+        print(f"  • Default token budget: {self.default_token_budget}")
+        print(f"  • Column retriever weight: {self.column_weight}")
+        print(f"  • Table retriever weight: {self.table_weight}")
+        print(f"🎯 Specialized retrievers ready:")
+        print(f"  • ColumnDescriptionRetriever: {'✅ Active' if self.column_retriever.column_index else '❌ No index'}")
+        print(f"  • TableDescriptionRetriever: {'✅ Active' if self.table_retriever.table_index else '❌ No index'}")
+        print("=" * 70)
     
     def retrieve(self, context: MultiRetrievalContext) -> Dict[RetrievalType, RetrievalResult]:
         """Main retrieval method using multiple specialized retrievers."""

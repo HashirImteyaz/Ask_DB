@@ -50,7 +50,7 @@ except FileNotFoundError:
 APP_STATE: Dict[str, Any] = {
     "retrievers": None,
     "rag_system": None,
-    "enhanced_rag_node": None,  # Add enhanced RAG node
+    "enhanced_rag_node": None, 
     "query_classifier": None,
     "model_router": None
 }
